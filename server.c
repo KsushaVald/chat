@@ -74,6 +74,7 @@ int main(){
 			}
 			tmp=tmp->next;
 		}
+		tmp=root;
 		if((strcmp(exit,message.text)!=0)&&(log==1)){
 			while(tmp!=NULL){
 				message.type=tmp->pid;
@@ -89,7 +90,10 @@ int main(){
 					p_tmp=tmp;
 					tmp=tmp->next;
 				}
-				p_tmp->next=tmp->next;
+				if(tmp!=root)
+					p_tmp->next=tmp->next;
+				else
+					root=tmp->next;
 			 	free(tmp);
 			}
 			else
