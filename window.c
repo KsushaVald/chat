@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <curses.h>
 #include "libwindow.h"
-
+extern struct win interface;
 WINDOW* window1(int y, int x, int py, int px){
 	WINDOW* wnd;
 	wnd=newwin(y,x,py,px);
@@ -24,17 +24,16 @@ WINDOW* window2(WINDOW* wnd, int y, int x, int py, int px){
 
 
 struct win create_interface(){
-	struct win interface;
 	initscr();
         cbreak();
         refresh();
-        noecho();
+        echo();
 	interface.wnd=window1(20,40,1,1);
 	interface.subwnd=window2(interface.wnd,18,30,1,1);
 	interface.wnd2=window1(20,10,1,42);
 	interface.subwnd2=window2(interface.wnd2,18,8,1,1);
-	interface.wnd3=window1(5,52,21,1);
-	interface.subwnd3=window2(interface.wnd3,3,48,1,1);
+	interface.wnd3=window1(10,52,21,1);
+	interface.subwnd3=window2(interface.wnd3,8,48,1,1);
 	return interface;
 }
 

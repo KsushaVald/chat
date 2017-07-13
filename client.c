@@ -9,8 +9,15 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <curses.h>
+#include <malloc.h>
 #include "libwindow.h"
 
+struct win interface;
+
+struct client{
+        char name[160];
+        struct client *next;
+};
 
 struct msg{
 	long type;
@@ -18,13 +25,22 @@ struct msg{
 	char text[160];
 };
 
+struct descriptor{
+	int fd_name;
+	int fd_message;
+};
+
+struct client  *users=NULL;
 
 void wqueue(int *fd_message)
 {
 	char exit[6]="_exit\0";
 	struct msg mes;
+	wprintw(interface.subwnd3,"Enter your message\n");
 	while(1){
-		scanf("%s", &mes.text);
+		wrefresh(interface.subwnd3);
+		wgetstr(interface.subwnd3, mes.text);
+		wclear(interface.subwnd3);
                 mes.type=2;
                 mes.pid=getpid();
                 msgsnd(fd_message,&mes,sizeof(struct msg),0);
@@ -34,13 +50,37 @@ void wqueue(int *fd_message)
 	}
 }
 
-void rqueue(int *fd_message)
+void rqueue(struct descriptor *d)
 {
-	int test; int err;
+	int test; int err; int i=0;
 	char exit[6]="_exit\0";
-	struct msg mes;
+	struct msg mes, name; struct client *tmp;
  	while(1){
-		test=msgrcv(fd_message,&mes, sizeof(struct msg),getpid(),IPC_NOWAIT);
+		test=msgrcv(d->fd_message,&mes, sizeof(struct msg),getpid(),IPC_NOWAIT);
+		if(test==-1){
+			err=errno;
+			if(err!=ENOMSG){
+				perror(msgrcv);
+				return 1;
+			}
+		}
+		else{	test=strncmp(exit,mes.text,5);
+			wprintw(interface.subwnd2,"%d\n",test);
+			wrefresh(interface.subwnd2);
+			if((strncmp(exit,mes.text,5))==0)
+				break;
+			else{
+				if(i==18){
+				 	i=0;
+					wclear(interface.subwnd);
+					wrefresh(interface.subwnd);
+				}
+				mvwprintw(interface.subwnd,i,0,"%s\n", mes.text);
+				wrefresh(interface.subwnd);
+				i++;
+			}
+		}
+		test=msgrcv(d->fd_name,&name, sizeof(struct msg),getpid(),IPC_NOWAIT);
 		if(test==-1){
 			err=errno;
 			if(err!=ENOMSG){
@@ -49,37 +89,34 @@ void rqueue(int *fd_message)
 			}
 		}
 		else{
-			if((strcmp(exit,mes.text))==0)
-				break;
-		//	else
-		//		printf("SERVER: %s\n", mes.text);
+			tmp=users;
 		}
 	}
 }
 
 int main()
 {
-	key_t id; int fd_message, fd_name;
+	key_t id; struct descriptor d;
 	struct msg name; pthread_t tid_w, tid_r;
 	int log=0; char exit[6]="_exit\0";
-	struct win interface=create_interface();
-
+	interface=create_interface();
 	id=ftok("server.c", 'S');
-	fd_message=msgget(id, 0);
+	d.fd_message=msgget(id, 0);
 	id=ftok("server.c", 'L');
-	fd_name=msgget(id, 0);
-	if(log==0){
-		//printf("Enter your name\n");
-		//scanf("%s", &name.text);
-		name.type=1;
-		name.pid=getpid();
-		log=1;
-		msgsnd(fd_name,&name,sizeof(struct msg),0);
-		//printf("Enter your mуssage\n");
-	}
-	pthread_create(&tid_w,NULL,wqueue, (void*)fd_message);
-	pthread_create(&tid_r,NULL, rqueue, (void*)fd_message);
+	d.fd_name=msgget(id, 0);
+
+	wprintw(interface.subwnd3,"Enter your name\n");
+	wgetstr(interface.subwnd3, name.text);
+	users=malloc(sizeof(struct client));
+	strcpy(users->name,name.text);
+	users->next=NULL;
+	name.type=1;
+	name.pid=getpid();
+	msgsnd(d.fd_name,&name,sizeof(struct msg),0);
+	pthread_create(&tid_w,NULL,wqueue, (void*)d.fd_message);
+	pthread_create(&tid_r,NULL,rqueue, (void*)&d);
 	pthread_join(tid_w,NULL);
 	pthread_join(tid_r,NULL);
 	del_interface(&interface);
+
 }

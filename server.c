@@ -6,6 +6,11 @@
 #include <string.h>
 #include <errno.h>
 
+struct spisok{
+	long type;
+	char *str[200];
+};
+
 struct msg{
 	long type;
 	long pid;
@@ -96,8 +101,8 @@ int main(){
 					root=tmp->next;
 			 	free(tmp);
 			}
-			else
-				msgsnd(fd_message,&message,sizeof(struct msg),0);
+			//else
+			//	msgsnd(fd_message,&message,sizeof(struct msg),0);
 
 		}
 	}
