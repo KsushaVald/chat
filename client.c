@@ -64,10 +64,8 @@ void rqueue(struct descriptor *d)
 				return 1;
 			}
 		}
-		else{	test=strncmp(exit,mes.text,5);
-			wprintw(interface.subwnd2,"%d\n",test);
-			wrefresh(interface.subwnd2);
-			if((strncmp(exit,mes.text,5))==0)
+		else{
+			if((strcmp(mes.text,exit))==0)
 				break;
 			else{
 				if(i==18){
@@ -90,6 +88,18 @@ void rqueue(struct descriptor *d)
 		}
 		else{
 			tmp=users;
+			wclear(interface.subwnd2);
+			while(tmp->next!=NULL){
+				wprintw(interface.subwnd2,"%s\n",tmp->name);
+				tmp=tmp->next;
+			}
+			wprintw(interface.subwnd2,"%s\n",tmp->name);
+			tmp->next=malloc(sizeof(struct client));
+			tmp=tmp->next;
+			strcpy(tmp->name,name.text);
+			tmp->next=NULL;
+			wprintw(interface.subwnd2,"%s\n",tmp->name);
+			wrefresh(interface.subwnd2);
 		}
 	}
 }

@@ -24,7 +24,7 @@ struct client{
 };
 
 int main(){
-	key_t id; int fd_message, fd_name;
+	key_t id; int fd_message, fd_name; long pid;
 	struct msg message, name;
 	struct client *root=NULL;
 	struct client *tmp, *p_tmp;
@@ -45,6 +45,8 @@ int main(){
 			}
 		}
 		else{
+			//name.type=name.pid;
+			//msgsnd(fd_name,&name,sizeof(struct msg),0);
 			if(root==NULL){
 				root=malloc(sizeof(struct client));
 				strcpy(root->name,name.text);
@@ -60,6 +62,17 @@ int main(){
 				strcpy(tmp->name,name.text);
 				tmp->pid=name.pid;
 				tmp->next=NULL;
+			}
+			p_tmp=tmp;
+			tmp=root; pid=name.pid;
+			while(tmp->next!=NULL){
+				name.type=tmp->pid;
+				msgsnd(fd_name,&name,sizeof(struct msg),0);
+				strcpy(name.text,tmp->name);
+				name.type=pid;
+				msgsnd(fd_name,&name,sizeof(struct msg),0);
+				strcpy(name.text,p_tmp->name);
+				tmp=tmp->next;
 			}
 		}
 		test=msgrcv(fd_message,&message,sizeof(struct msg),2L,IPC_NOWAIT);
