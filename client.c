@@ -32,6 +32,14 @@ struct descriptor{
 
 struct client  *users=NULL;
 
+void del_spisok(){
+	struct client *tmp;
+	tmp=users;
+	while(users!=NULL){
+		users=tmp->next;
+		free(tmp);
+	}
+}
 void wqueue(int *fd_message)
 {
 	char exit[6]="_exit\0";
@@ -65,7 +73,7 @@ void rqueue(struct descriptor *d)
 			}
 		}
 		else{
-			if((strcmp(mes.text,exit))==0)
+			if((strstr(mes.text,exit))!=NULL)
 				break;
 			else{
 				if(i==18){
@@ -120,6 +128,8 @@ int main()
 	users=malloc(sizeof(struct client));
 	strcpy(users->name,name.text);
 	users->next=NULL;
+	wprintw(interface.subwnd2,"%s\n", users->name);
+	wrefresh(interface.subwnd2);
 	name.type=1;
 	name.pid=getpid();
 	msgsnd(d.fd_name,&name,sizeof(struct msg),0);
@@ -128,5 +138,6 @@ int main()
 	pthread_join(tid_w,NULL);
 	pthread_join(tid_r,NULL);
 	del_interface(&interface);
+	del_spisok();
 
 }

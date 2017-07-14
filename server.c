@@ -108,6 +108,7 @@ int main(){
 					p_tmp=tmp;
 					tmp=tmp->next;
 				}
+				tmp=root;
 				if(tmp!=root)
 					p_tmp->next=tmp->next;
 				else
