@@ -27,7 +27,7 @@ int main(){
 	key_t id; int fd_message, fd_name; long pid;
 	struct msg message, name;
 	struct client *root=NULL;
-	struct client *tmp, *p_tmp;
+	struct client *tmp, *p_tmp, *del_tmp;
 	int test, err, log; char exit[6]="_exit\0";
 
 	id=ftok("server.c", 'S');
@@ -45,8 +45,7 @@ int main(){
 			}
 		}
 		else{
-			//name.type=name.pid;
-			//msgsnd(fd_name,&name,sizeof(struct msg),0);
+
 			if(root==NULL){
 				root=malloc(sizeof(struct client));
 				strcpy(root->name,name.text);
@@ -108,15 +107,22 @@ int main(){
 					p_tmp=tmp;
 					tmp=tmp->next;
 				}
+				del_tmp=tmp;
+				strcpy(name.text,tmp->name);
 				tmp=root;
-				if(tmp!=root)
-					p_tmp->next=tmp->next;
+				while(tmp!=NULL){
+                        	        name.type=tmp->pid;
+                	                msgsnd(fd_name,&name,sizeof(struct msg),0);
+        	                        tmp=tmp->next;
+	                        }
+				if(del_tmp!=root)
+					p_tmp->next=del_tmp->next;
 				else
-					root=tmp->next;
-			 	free(tmp);
+					root=del_tmp->next;
+			 	free(del_tmp);
 			}
-			//else
-			//	msgsnd(fd_message,&message,sizeof(struct msg),0);
+		//	else
+		//		msgsnd(fd_message,&message,sizeof(struct msg),0);
 
 		}
 	}

@@ -11,6 +11,8 @@
 #include <curses.h>
 #include <malloc.h>
 #include "libwindow.h"
+#include <unistd.h>
+pthread_mutex_t m1=PTHREAD_MUTEX_INITIALIZER;
 
 struct win interface;
 
@@ -46,15 +48,18 @@ void wqueue(int *fd_message)
 	struct msg mes;
 	wprintw(interface.subwnd3,"Enter your message\n");
 	while(1){
+	 	pthread_mutex_lock(&m1);
 		wrefresh(interface.subwnd3);
 		wgetstr(interface.subwnd3, mes.text);
 		wclear(interface.subwnd3);
+ 		pthread_mutex_unlock(&m1);
                 mes.type=2;
                 mes.pid=getpid();
                 msgsnd(fd_message,&mes,sizeof(struct msg),0);
                 if((strcmp(mes.text,exit))==0){
             		break;
 		}
+		sleep(1);
 	}
 }
 
@@ -62,7 +67,7 @@ void rqueue(struct descriptor *d)
 {
 	int test; int err; int i=0;
 	char exit[6]="_exit\0";
-	struct msg mes, name; struct client *tmp;
+	struct msg mes, name; struct client *tmp, *p_tmp, *del_tmp;
  	while(1){
 		test=msgrcv(d->fd_message,&mes, sizeof(struct msg),getpid(),IPC_NOWAIT);
 		if(test==-1){
@@ -76,6 +81,7 @@ void rqueue(struct descriptor *d)
 			if((strstr(mes.text,exit))!=NULL)
 				break;
 			else{
+				pthread_mutex_lock(&m1);
 				if(i==18){
 				 	i=0;
 					wclear(interface.subwnd);
@@ -95,20 +101,42 @@ void rqueue(struct descriptor *d)
 			}
 		}
 		else{
-			tmp=users;
+			tmp=users; p_tmp=NULL; del_tmp=NULL;
 			wclear(interface.subwnd2);
 			while(tmp->next!=NULL){
+				if(strcmp(name.text,tmp->name)==0){
+					del_tmp=tmp;
+					tmp=tmp->next;
+					p_tmp->next=tmp;
+					free(del_tmp);
+				}
 				wprintw(interface.subwnd2,"%s\n",tmp->name);
-				tmp=tmp->next;
+				p_tmp=tmp;
+				if(tmp->next!=NULL)
+					tmp=tmp->next;
 			}
-			wprintw(interface.subwnd2,"%s\n",tmp->name);
-			tmp->next=malloc(sizeof(struct client));
-			tmp=tmp->next;
-			strcpy(tmp->name,name.text);
-			tmp->next=NULL;
-			wprintw(interface.subwnd2,"%s\n",tmp->name);
+			if((strcmp(name.text,tmp->name)!=0)&&(del_tmp==NULL)){
+				wprintw(interface.subwnd2,"%s\n",tmp->name);
+				tmp->next=malloc(sizeof(struct client));
+				tmp=tmp->next;
+				strcpy(tmp->name,name.text);
+				tmp->next=NULL;
+				wprintw(interface.subwnd2,"%s\n",tmp->name);
+			}
+
+			else{
+				if(strcmp(name.text,tmp->name)==0){
+					p_tmp->next=tmp->next;
+					free(tmp);
+				}
+				//else
+				//	wprintw(interface.subwnd2,"%s\n",tmp->name);
+			}
 			wrefresh(interface.subwnd2);
+			pthread_mutex_unlock(&m1);
+
 		}
+		sleep(1);
 	}
 }
 
