@@ -89,7 +89,9 @@ void rqueue(struct descriptor *d)
 				}
 				mvwprintw(interface.subwnd,i,0,"%s\n", mes.text);
 				wrefresh(interface.subwnd);
+				pthread_mutex_unlock(&m1);
 				i++;
+				sleep(1);
 			}
 		}
 		test=msgrcv(d->fd_name,&name, sizeof(struct msg),getpid(),IPC_NOWAIT);
@@ -102,6 +104,7 @@ void rqueue(struct descriptor *d)
 		}
 		else{
 			tmp=users; p_tmp=NULL; del_tmp=NULL;
+			pthread_mutex_lock(&m1);
 			wclear(interface.subwnd2);
 			while(tmp->next!=NULL){
 				if(strcmp(name.text,tmp->name)==0){
@@ -134,9 +137,8 @@ void rqueue(struct descriptor *d)
 			}
 			wrefresh(interface.subwnd2);
 			pthread_mutex_unlock(&m1);
-
+			sleep(1);
 		}
-		sleep(1);
 	}
 }
 
